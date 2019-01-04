@@ -94,6 +94,7 @@ fun run(user: String, server: String, proxy: Proxy, trust: InputStream?) {
     })
     val j = GlobalScope.launch { process(sync, userId.user, api, weather) }
     sync.startSyncing()
+    logger.info { "Syncing started" }
     runBlocking { j.join() }
 }
 
@@ -129,7 +130,17 @@ suspend fun respond(
 ) {
     val text = message.content?.body?.substringAfter(' ')
     text ?: return
-    if (!text.contains(keyword)) return
+    if (!text.contains(keyword)) {
+        val send = api.sendRoomMessage(
+                RoomId(roomId),
+                TextMessage("I'm a simple weather bot based on https://github.com/koma-im " +
+                        "Mention me and use the word 'weather' and city name, for example: weather london")
+        ).awaitMatrix()
+        if (send is Result.Failure) {
+            logger.warn { "Failed to send introduction: ${send.error}" }
+        }
+        return
+    }
     val param = text.replace(keyword, "").trim()
     if (param.isBlank()) return
     logger.debug { "Got query for $param" }
