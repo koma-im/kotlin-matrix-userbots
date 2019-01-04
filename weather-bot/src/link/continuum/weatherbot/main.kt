@@ -13,6 +13,7 @@ import koma.matrix.event.room_message.chat.TextMessage
 import koma.matrix.room.naming.RoomId
 import koma.storage.config.ConfigPaths
 import koma.util.coroutine.adapter.retrofit.await
+import koma.util.coroutine.adapter.retrofit.awaitMatrix
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -142,7 +143,10 @@ suspend fun respond(
         return
     }
     val m = formatReply(message.sender.user, param, res)
-    api.sendRoomMessage(RoomId(roomId), m)
+    val send = api.sendRoomMessage(RoomId(roomId), m).awaitMatrix()
+    if (send is Result.Failure) {
+        logger.warn { "Failed to send reply: ${send.error}" }
+    }
 
 }
 
