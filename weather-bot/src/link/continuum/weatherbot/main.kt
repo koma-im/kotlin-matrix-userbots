@@ -58,8 +58,9 @@ fun run(user: String, server: String) {
     val sync = MatrixSyncReceiver(api, batch_key)
     val weather = WeatherApi(koma.http.client, weather_token)
     try {
-        GlobalScope.launch { process(sync, userId.user, api, weather) }
+        val j = GlobalScope.launch { process(sync, userId.user, api, weather) }
         sync.startSyncing()
+        runBlocking { j.join() }
     } finally {
         val nb = sync.since
         logger.debug { "Saving batch key $nb" }

@@ -19,8 +19,7 @@ class WeatherApi(client: OkHttpClient, private val token: String) {
         val moshi = MoshiInstance.moshi
         val url = HttpUrl.Builder().scheme("https")
                 .host("api.openweathermap.org")
-                .addPathSegment("data")
-                .addPathSegment("2.5")
+                .addPathSegments("data/2.5/")
                 .build()
         openWeatherMap = Retrofit.Builder()
                 .baseUrl(url)
