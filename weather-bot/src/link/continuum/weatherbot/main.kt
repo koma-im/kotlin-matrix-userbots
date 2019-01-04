@@ -8,14 +8,19 @@ import koma.controller.sync.MatrixSyncReceiver
 import koma.matrix.MatrixApi
 import koma.matrix.UserId
 import koma.matrix.event.room_message.MRoomMessage
+import koma.matrix.event.room_message.chat.TextMessage
+import koma.matrix.room.naming.RoomId
 import koma.storage.config.ConfigPaths
+import koma.util.coroutine.adapter.retrofit.await
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
 import okhttp3.HttpUrl
+import retrofit2.Response
 import java.net.Proxy
+import java.time.Instant
 
 private val logger = KotlinLogging.logger {}
 
@@ -38,6 +43,11 @@ fun run(user: String, server: String) {
         logger.error { "No TOKEN supplied" }
         return
     }
+    val weather_token = env.get("WEATHER_TOKEN")
+    if (weather_token == null) {
+        logger.error { "No token supplied for weather api" }
+        return
+    }
     val url = HttpUrl.parse(server)
     if (url == null) {
         logger.error { "Invalid homeserver url $server" }
@@ -46,8 +56,9 @@ fun run(user: String, server: String) {
     val api = koma.createApi(token, userId, url)
     val batch_key = loadSyncBatchToken()
     val sync = MatrixSyncReceiver(api, batch_key)
+    val weather = WeatherApi(koma.http.client, weather_token)
     try {
-        GlobalScope.launch { process(sync, userId.user, api) }
+        GlobalScope.launch { process(sync, userId.user, api, weather) }
         sync.startSyncing()
     } finally {
         val nb = sync.since
@@ -59,7 +70,7 @@ fun run(user: String, server: String) {
     }
 }
 
-suspend fun process(sync: MatrixSyncReceiver, name: String, api: MatrixApi) {
+suspend fun process(sync: MatrixSyncReceiver, name: String, api: MatrixApi, weatherApi: WeatherApi) {
     for (s in sync.events) {
         if (s is Result.Success) {
             for (entry in s.value.rooms.join.entries) {
@@ -67,7 +78,7 @@ suspend fun process(sync: MatrixSyncReceiver, name: String, api: MatrixApi) {
                 for (event in entry.value.timeline.events) {
                     if (event is MRoomMessage) {
                         if (name == event.content?.body?.substringBefore(' ')?.trimEnd(':')) {
-                            GlobalScope.launch { respond(roomId, event, api) }
+                            GlobalScope.launch { respond(roomId, event, api, weatherApi) }
                         }
                     }
                 }
@@ -83,11 +94,60 @@ suspend fun process(sync: MatrixSyncReceiver, name: String, api: MatrixApi) {
 
 const val keyword = "weather"
 
-suspend fun respond(roomId: String, message: MRoomMessage, api:MatrixApi) {
+suspend fun respond(
+        roomId: String,
+        message: MRoomMessage,
+        api:MatrixApi,
+        weatherApi: WeatherApi
+) {
     val text = message.content?.body?.substringAfter(' ')
     text ?: return
     if (!text.contains(keyword)) return
     val param = text.replace(keyword, "").trim()
     if (param.isBlank()) return
     logger.debug { "Got query for $param" }
+    val res = weatherApi.weather(param).await()
+    if (Instant.now().epochSecond - message.origin_server_ts > 30) {
+        logger.warn { "It has been too long since the message " +
+                "${message.content?.body?.take(20)} from ${message.sender} " +
+                "was sent, not responding"
+        }
+        return
+    }
+    val m = formatReply(message.sender.user, param, res)
+    api.sendRoomMessage(RoomId(roomId), m)
+
+}
+
+fun formatReply(
+        nick: String,
+        city: String,
+        result: Result<Response<CurrentWeather>, Exception>
+): TextMessage {
+    val text = when (result) {
+        is Result.Failure -> {
+            logger.warn { "Failed to get weather for $city: ${result.error}" }
+            "$nick: Failed to get weather for $city: ${result.error.message?.take(20)}"
+        }
+        is Result.Success -> {
+            val response = result.value
+            val body = response.body()
+            if (response.isSuccessful && body != null) {
+                "$nick: ${weatherExcerpt(body)}"
+            } else {
+                "$nick: Weather service returned error for $city: ${response.errorBody()}"
+            }
+        }
+    }
+    return TextMessage(body = text)
+}
+
+fun weatherExcerpt(weather: CurrentWeather): String {
+    val info =  "Weather for ${weather.name}: " +
+            "${weather.weather.firstOrNull()?.description} " +
+            "Temperature=${weather.main.temp}K " +
+            "Humidity=${weather.main.humidity} " +
+            "Cloudy=${weather.clouds.all}% " +
+            "Wind=${weather.wind.speed}m/s, ${weather.wind.deg}°"
+    return info
 }

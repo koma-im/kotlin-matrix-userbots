@@ -7,4 +7,7 @@ module weatherbot {
     requires kotlinx.coroutines.core;
     requires result;
     requires org.slf4j;
+    requires com.squareup.moshi;
+    requires retrofit2;
+    requires retrofit2.converter.moshi;
 }
