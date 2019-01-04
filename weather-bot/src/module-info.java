@@ -10,4 +10,5 @@ module weatherbot {
     requires com.squareup.moshi;
     requires retrofit2;
     requires retrofit2.converter.moshi;
+    requires okio;
 }

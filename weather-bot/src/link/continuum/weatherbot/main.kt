@@ -12,7 +12,6 @@ import koma.matrix.event.room_message.MRoomMessage
 import koma.matrix.event.room_message.chat.TextMessage
 import koma.matrix.room.naming.RoomId
 import koma.storage.config.ConfigPaths
-import koma.util.coroutine.adapter.retrofit.await
 import koma.util.coroutine.adapter.retrofit.awaitMatrix
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
@@ -20,7 +19,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
 import okhttp3.HttpUrl
-import retrofit2.Response
 import java.io.File
 import java.io.InputStream
 import java.net.Proxy
@@ -135,7 +133,7 @@ suspend fun respond(
     val param = text.replace(keyword, "").trim()
     if (param.isBlank()) return
     logger.debug { "Got query for $param" }
-    val res = weatherApi.weather(param).await()
+    val res = weatherApi.weather(param)
     if (Instant.now().epochSecond - message.origin_server_ts > 30) {
         logger.warn { "It has been too long since the message " +
                 "${message.content?.body?.take(20)} from ${message.sender} " +
@@ -154,22 +152,14 @@ suspend fun respond(
 fun formatReply(
         nick: String,
         city: String,
-        result: Result<Response<CurrentWeather>, Exception>
+        result: Result<CurrentWeather, Exception>
 ): TextMessage {
     val text = when (result) {
         is Result.Failure -> {
             logger.warn { "Failed to get weather for $city: ${result.error}" }
-            "$nick: Failed to get weather for $city: ${result.error.message?.take(20)}"
+            "$nick: Failed to get weather for $city: ${result.error}"
         }
-        is Result.Success -> {
-            val response = result.value
-            val body = response.body()
-            if (response.isSuccessful && body != null) {
-                "$nick: ${weatherExcerpt(body)}"
-            } else {
-                "$nick: Weather service returned error for $city: ${response.errorBody()}"
-            }
-        }
+        is Result.Success -> "$nick: ${weatherExcerpt(result.value)}"
     }
     return TextMessage(body = text)
 }

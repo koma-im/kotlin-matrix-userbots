@@ -1,7 +1,10 @@
- package link.continuum.weatherbot
+package link.continuum.weatherbot
 
+import com.github.kittinunf.result.Result
 import com.squareup.moshi.Json
 import koma.matrix.json.MoshiInstance
+import koma.util.coroutine.adapter.retrofit.await
+import mu.KotlinLogging
 import okhttp3.HttpUrl
 import okhttp3.OkHttpClient
 import retrofit2.Call
@@ -10,10 +13,30 @@ import retrofit2.converter.moshi.MoshiConverterFactory
 import retrofit2.http.GET
 import retrofit2.http.Query
 
+private val logger = KotlinLogging.logger {}
+
 class WeatherApi(client: OkHttpClient, private val token: String) {
     private val openWeatherMap: OpenWeatherMapApi
 
-    fun weather(city: String) = openWeatherMap.weather(city, token)
+    suspend fun weather(city: String): Result<CurrentWeather, Exception> {
+        val res = openWeatherMap.weather(city, token).await()
+        when (res) {
+            is Result.Success -> {
+                val response = res.value
+                val body = response.body()
+                if (response.isSuccessful && body != null) {
+                    return Result.of(body)
+                } else {
+                    val es = response.errorBody()?.source()?.readUtf8()
+                    val we = es?.let { WeatherErrorJson.parse(es) }
+                    if (we != null) return Result.error(we)
+                    return Result.error(Exception(
+                            "Weather api error ${response.code()}, ${response.message()}, $es"))
+                }
+            }
+            is Result.Failure -> return Result.error(res.error)
+        }
+    }
 
     init {
         val moshi = MoshiInstance.moshi
@@ -30,11 +53,28 @@ class WeatherApi(client: OkHttpClient, private val token: String) {
 }
 
 private interface OpenWeatherMapApi {
-     @GET("weather")
-     fun weather(@Query("q") city: String,
-                 @Query("appid") token: String
-     ): Call<CurrentWeather>
- }
+    @GET("weather")
+    fun weather(@Query("q") city: String,
+                @Query("appid") token: String
+    ): Call<CurrentWeather>
+}
+
+private object WeatherErrorJson {
+    private val jsonAdapter = MoshiInstance.moshi.adapter(WeatherError::class.java)
+    fun parse(text: String): WeatherError? {
+        try {
+            return jsonAdapter.fromJson(text)
+        } catch (e: Exception) {
+            logger.error { "Failed to parse error response $text. Error $e" }
+            return null
+        }
+    }
+}
+
+data class WeatherError(
+        val cod: String,
+        override val message: String
+): Exception("Weather api error $cod: $message")
 
 /**
  * response from openweathermap
