@@ -84,18 +84,19 @@ fun run(user: String, server: String, proxy: Proxy, trust: InputStream?) {
     val batch_key = loadSyncBatchToken()
     val sync = MatrixSyncReceiver(api, batch_key)
     val weather = WeatherApi(koma.http.client, weather_token)
-    try {
-        val j = GlobalScope.launch { process(sync, userId.user, api, weather) }
-        sync.startSyncing()
-        runBlocking { j.join() }
-    } finally {
-        val nb = sync.since
-        logger.debug { "Saving batch key $nb" }
-        nb?.let { saveSyncBatchToken(nb) }
-        runBlocking {
-            sync.stopSyncing()
+    Runtime.getRuntime().addShutdownHook(object : Thread(){
+        override fun run() {
+            val nb = sync.since
+            logger.debug { "Saving batch key $nb" }
+            nb?.let { saveSyncBatchToken(nb) }
+            runBlocking {
+                sync.stopSyncing()
+            }
         }
-    }
+    })
+    val j = GlobalScope.launch { process(sync, userId.user, api, weather) }
+    sync.startSyncing()
+    runBlocking { j.join() }
 }
 
 suspend fun process(sync: MatrixSyncReceiver, name: String, api: MatrixApi, weatherApi: WeatherApi) {

@@ -1,4 +1,5 @@
 target
+next_batch
 *.iml
 *.crt
 # Compiled class file
