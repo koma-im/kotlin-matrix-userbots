@@ -2,6 +2,7 @@ package link.continuum.weatherbot
 
 import com.github.kittinunf.result.Result
 import com.xenomachina.argparser.ArgParser
+import com.xenomachina.argparser.default
 import com.xenomachina.argparser.mainBody
 import koma.Koma
 import koma.controller.sync.MatrixSyncReceiver
@@ -19,6 +20,8 @@ import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
 import okhttp3.HttpUrl
 import retrofit2.Response
+import java.io.File
+import java.io.InputStream
 import java.net.Proxy
 import java.time.Instant
 
@@ -26,17 +29,40 @@ private val logger = KotlinLogging.logger {}
 
 fun main(args: Array<String>) = mainBody {
     val a = ArgParser(args).parseInto(::MyArgs)
-    run(a.user, a.server)
+    val po = a.proxy
+    val proxy = if (po != null) {
+        val pp = parseProxy(po)
+        if (pp == null) {
+            logger.error { "Invalid proxy: $po" }
+            return@mainBody
+        }
+        pp
+    } else {
+        Proxy.NO_PROXY
+    }
+    val trust = a.trust?.let { path ->
+        val f = File(path)
+        try {
+            f.inputStream()
+        } catch (e: Exception) {
+            logger.error { "Failed to load certificate file $path: $e" }
+            null
+        }
+    }
+    run(a.user, a.server, proxy, trust)
 }
 
 class MyArgs(parser: ArgParser) {
     val user by parser.storing("userid of the account to use")
     val server by parser.storing("url of the homeserver")
+    val proxy by parser.storing("http proxy").default<String?>(null)
+    val trust by parser.storing("path to additional certificate to trust")
+            .default<String?>(null)
 }
 
-fun run(user: String, server: String) {
+fun run(user: String, server: String, proxy: Proxy, trust: InputStream?) {
     val userId = UserId(user)
-    val koma = Koma(ConfigPaths("."), proxy = Proxy.NO_PROXY)
+    val koma = Koma(ConfigPaths("."), proxy = proxy, addTrust = trust)
     val env = System.getenv()
     val token = env.get("TOKEN")
     if (token == null) {
