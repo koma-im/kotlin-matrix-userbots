@@ -11,6 +11,7 @@ import koma.matrix.UserId
 import koma.matrix.event.room_message.MRoomMessage
 import koma.matrix.event.room_message.chat.TextMessage
 import koma.matrix.room.naming.RoomId
+import koma.network.client.okhttp.Dns
 import koma.storage.config.ConfigPaths
 import koma.util.coroutine.adapter.retrofit.awaitMatrix
 import kotlinx.coroutines.GlobalScope
@@ -19,6 +20,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
 import okhttp3.HttpUrl
+import okhttp3.OkHttpClient
 import java.io.File
 import java.io.InputStream
 import java.net.Proxy
@@ -48,7 +50,7 @@ fun main(args: Array<String>) = mainBody {
             null
         }
     }
-    run(a.user, a.server, proxy, trust)
+    run(a.user, a.server, proxy, trust, a.ipv4)
 }
 
 class MyArgs(parser: ArgParser) {
@@ -57,11 +59,23 @@ class MyArgs(parser: ArgParser) {
     val proxy by parser.storing("http proxy").default<String?>(null)
     val trust by parser.storing("path to additional certificate to trust")
             .default<String?>(null)
+    val ipv4 by parser.flagging("use ipv4 only")
 }
 
-fun run(user: String, server: String, proxy: Proxy, trust: InputStream?) {
+fun run(
+        user: String,
+        server: String,
+        proxy: Proxy,
+        trust: InputStream?,
+        ipv4: Boolean = false
+) {
     val userId = UserId(user)
-    val koma = Koma(ConfigPaths("."), proxy = proxy, addTrust = trust)
+    val koma = Koma(
+            ConfigPaths("."),
+            proxy = proxy,
+            http_builder = if (ipv4) OkHttpClient.Builder().dns(Dns.onlyV4) else null,
+            addTrust = trust
+    )
     val env = System.getenv()
     val token = env.get("TOKEN")
     if (token == null) {
