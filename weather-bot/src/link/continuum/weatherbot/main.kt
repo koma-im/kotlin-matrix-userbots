@@ -101,9 +101,6 @@ fun run(
             val nb = sync.since
             logger.debug { "Saving batch key $nb" }
             nb?.let { saveSyncBatchToken(nb) }
-            runBlocking {
-                sync.stopSyncing()
-            }
         }
     })
     val j = GlobalScope.launch { process(sync, userId.user, api, weather) }
