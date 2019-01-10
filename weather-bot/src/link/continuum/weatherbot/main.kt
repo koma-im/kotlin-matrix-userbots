@@ -112,7 +112,10 @@ fun run(
 suspend fun process(sync: MatrixSyncReceiver, name: String, api: MatrixApi, weatherApi: WeatherApi) {
     for (s in sync.events) {
         if (s is Result.Success) {
-            for (entry in s.value.rooms.join.entries) {
+            val rooms = s.value.rooms
+            logger.trace { "Received update for ${rooms.join.size} joined rooms " +
+                    "${rooms.invite.size} invited rooms ${rooms.leave.size} left rooms" }
+            for (entry in rooms.join.entries) {
                 val roomId = entry.key
                 for (event in entry.value.timeline.events) {
                     if (event is MRoomMessage) {
