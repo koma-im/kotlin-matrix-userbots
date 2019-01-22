@@ -2,6 +2,7 @@ target
 next_batch
 out
 *.iml
+.idea
 *.crt
 # Compiled class file
 *.class
