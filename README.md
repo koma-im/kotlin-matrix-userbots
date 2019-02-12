@@ -1,7 +1,9 @@
 bots based on the [koma library](https://github.com/koma-im/koma-library)
 
+In the command line, add `-h` or `--help` for help.
 
-uses the normal user api
+For security, only tokens are used. You can login to riot.im and use the developer tools of the browser to copy the parameter `access_token` in requests.
+Pass the access token using a environment variable named `TOKEN`.
 
 
 ## Troubleshooting
