@@ -182,8 +182,8 @@ class Processor(
     suspend fun commands(txt: String, roomId: RoomId): Boolean {
         when (txt) {
             "leave" -> {
-                api.sendRoomMessage(roomId, TextMessage("Bye! I'm leaving the room as requested"))
-                        .awaitMatrix().failure {
+                api.sendMessage(roomId, TextMessage("Bye! I'm leaving the room as requested"))
+                        .failure {
                             logger.error { "sending goodbye to $roomId, $it" }
                         }
                 api.leavingRoom(roomId).awaitMatrix().failure {
@@ -194,9 +194,11 @@ class Processor(
             "help" -> {
                 val msg = "I'm a bot for drawing text and avatar onto image. " +
                         "To use me, prefix message with $CALLNAME. " +
-                        "To get into my source, visit $HOMEPAGE"
-                api.sendRoomMessage(roomId, TextMessage(msg))
-                        .awaitMatrix().failure {
+                        "For example: avecho hello. And \"hello\" and your avatar" +
+                        "will appear in an image. " +
+                        "I'm written in Kotlin, visit $HOMEPAGE to get the code."
+                api.sendMessage(roomId, TextMessage(msg))
+                        .failure {
                             logger.error { "sending help to $roomId, $it" }
                         }
                 return true
@@ -216,11 +218,13 @@ class Processor(
                 logger.info { "joined room ${joinResult.value.room_id}" }
             }
         }
-        val msg = "Hola, I'm a bot created at $HOMEPAGE" +
-                " Send a text prefiexed with $CALLNAME, " +
-                "and I'll draw it as image including your avatar."
-        api.sendRoomMessage(roomId = RoomId(roomId),
-                message = TextMessage(msg)).awaitMatrix()
+        val msg = "Hi, I'm a bot for drawing texts. " +
+                "Send a message like $CALLNAME TEXT, " +
+                "and I'll draw TEXT as image, and include your avatar. " +
+                "Send avecho help for more info. " +
+                "My code (in Kotlin) is at $HOMEPAGE"
+        api.sendMessage(roomId = RoomId(roomId),
+                message = TextMessage(msg))
                 .failure {
                     logger.error { "sending greetings, $it" }
         }
@@ -228,8 +232,8 @@ class Processor(
 }
 
 suspend fun trySendMessage(api: MatrixApi, roomId: String, text: String) {
-    api.sendRoomMessage(RoomId(roomId), TextMessage(text))
-            .awaitMatrix().failure {
+    api.sendMessage(RoomId(roomId), TextMessage(text))
+            .failure {
                 logger.error { "sending message $text to $roomId, $it" }
             }
 }
@@ -286,16 +290,15 @@ class EchoProcessor(
             trySendMessage(api, roomId, m)
             return
         }
-        echoImage(roomId, echoText.substringAfter(' '), im.get(), api)
+        echoImage(roomId, im.get(), api)
     }
 
     suspend fun echoImage(
             roomId: String,
-            text: String,
             image: Image,
             api: MatrixApi
     ) {
-        val img = renderer.generateImage(text, image)
+        val img = renderer.generateImage(echoText, image)
         val res = api.uploadByteArray(MediaType.get("image/png"), img).awaitMatrix()
         if (res is Result.Failure) {
             val m = "can't upload generated image for $sender, ${res.error}"
@@ -305,7 +308,7 @@ class EchoProcessor(
         }
         val url = res.get()
         val alt = "$sender: $echoText"
-        api.sendRoomMessage(RoomId(roomId), ImageMessage(alt, url.content_uri)).awaitMatrix().failure {
+        api.sendMessage(RoomId(roomId), ImageMessage(alt, url.content_uri)).failure {
             logger.error { "Sending image message $it" }
         }
     }
