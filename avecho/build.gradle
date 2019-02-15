@@ -45,12 +45,13 @@ dependencies {
     compile 'io.github.microutils:kotlin-logging:1.6.22'
     compile 'org.slf4j:slf4j-api:1.8.0-beta2'
     compile 'org.slf4j:slf4j-simple:1.8.0-beta2'
-    compile 'io.github.koma-im:koma-library:0.7.6.2'
+    compile 'io.github.koma-im:koma-library:0.7.6.4'
     compile 'com.xenomachina:kotlin-argparser:2.0.7'
+    implementation 'org.junit.jupiter:junit-jupiter-api:5.1.0'
 }
 
 group = 'link.continuum'
-version = '0.0.3'
+version = '0.0.6'
 description = 'avecho'
 sourceCompatibility = '9'
 

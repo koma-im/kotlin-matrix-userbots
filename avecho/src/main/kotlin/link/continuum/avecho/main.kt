@@ -29,7 +29,7 @@ import okhttp3.HttpUrl
 import okhttp3.MediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import java.awt.Image
+import java.awt.image.BufferedImage
 import java.io.File
 import java.io.InputStream
 import java.net.Proxy
@@ -152,7 +152,7 @@ suspend fun processEvent(sync: MatrixSyncReceiver, processor: Processor) {
             }
         } else if (s is Result.Failure) {
             logger.warn { "sync failure ${s.error}" }
-            delay(60 * 1000)
+            delay(6 * 1000)
             logger.warn { "retrying sync" }
             sync.startSyncing()
         }
@@ -243,7 +243,7 @@ class EchoProcessor(
         private val api: MatrixApi,
         private val roomId: String,
         private val sender: UserId,
-        private val echoText: String,
+        private val rawText: String,
         private val renderer: TextRenderer
 ) {
     suspend fun process() {
@@ -295,10 +295,10 @@ class EchoProcessor(
 
     suspend fun echoImage(
             roomId: String,
-            image: Image,
+            image: BufferedImage,
             api: MatrixApi
     ) {
-        val img = renderer.generateImage(echoText, image)
+        val img = renderer.generateImage(unescapeUnicode(rawText), image)
         val res = api.uploadByteArray(MediaType.get("image/png"), img).awaitMatrix()
         if (res is Result.Failure) {
             val m = "can't upload generated image for $sender, ${res.error}"
@@ -307,7 +307,7 @@ class EchoProcessor(
             return
         }
         val url = res.get()
-        val alt = "$sender: $echoText"
+        val alt = "$sender: $rawText"
         api.sendMessage(RoomId(roomId), ImageMessage(alt, url.content_uri)).failure {
             logger.error { "Sending image message $it" }
         }
