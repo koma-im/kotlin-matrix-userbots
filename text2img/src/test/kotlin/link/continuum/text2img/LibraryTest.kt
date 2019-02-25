@@ -1,5 +1,10 @@
 package link.continuum.text2img
 
+import java.awt.Color
+import java.awt.Font
+import java.io.File
+import javax.imageio.ImageIO
+import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -14,5 +19,13 @@ class LibraryTest {
         assertEquals("❤", unescapeUnicode("\\u{2764}"))
         assertEquals("☺", unescapeUnicode("\\u{263a}"))
         assertEquals("☺❤", unescapeUnicode("\\u{263a}\\u{2764}"))
+    }
+
+    @Ignore @Test fun testRun() {
+            val bg = ImageIO.read(File("b.jpg"))
+            val im = drawPicSay(bg, "hello", 1024, 768, 600,
+                    Font(Font.SANS_SERIF, Font.ITALIC,64), color =  Color.RED)
+            File("o.png").writeBytes(im)
+
     }
 }

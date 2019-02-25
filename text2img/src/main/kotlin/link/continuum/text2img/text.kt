@@ -2,6 +2,9 @@ package link.continuum.text2img
 
 
 import mu.KotlinLogging
+import java.awt.Font
+import java.awt.FontMetrics
+import java.awt.image.BufferedImage
 
 private val logger = KotlinLogging.logger {}
 
@@ -37,6 +40,73 @@ fun unescapeUnicode(escaped: String): String {
         }
     }
     return sb.toString()
+}
+
+
+class TextWrapper(font: Font,
+                  private val widthLimit: Int) {
+    private val fontMetrics: FontMetrics
+    val lineHeight: Int
+    init {
+        val graphics = BufferedImage(1,1, BufferedImage.TYPE_INT_ARGB).createGraphics()
+        graphics.font = font
+        fontMetrics = graphics.fontMetrics
+        lineHeight = fontMetrics.height
+    }
+
+    fun splitWrap(text: String): Pair<List<String>, Int> {
+        return wrapWords(splitText(text))
+    }
+    fun wrapWords(words: List<String>): Pair<List<String>, Int> {
+        val lines = mutableListOf("")
+        var longest = 0
+        words.forEach { word ->
+            val s = lines.last() + word
+            val w =  fontMetrics.stringWidth(s)
+            if (w < widthLimit) {
+                longest = Math.max(longest, w)
+                lines[lines.size - 1] = s
+            } else {
+                lines.add(word)
+            }
+        }
+        if (longest == 0) {
+            logger.warn { "got no maximum line length" }
+            longest = widthLimit
+        }
+        return lines to longest
+    }
+}
+
+/**
+ * separate spaces and ideographic characters
+ */
+private fun splitText(text: String): List<String> {
+    return separateChars(text) { c -> Character.isIdeographic(c) || Character.isSpaceChar(c)}
+}
+
+/**
+ * separate characters
+ */
+private fun separateChars(text: String, sepChar: (Int)-> Boolean): List<String> {
+    var lastSep = false
+    val subStrs = mutableListOf<MutableList<Int>>()
+    text.codePoints().forEach { c->
+        if (sepChar(c)) {
+            subStrs.add(mutableListOf(c))
+            lastSep = true
+        } else {
+            if (lastSep || subStrs.isEmpty())
+                subStrs.add(mutableListOf(c))
+            else
+                subStrs.last().add(c)
+            lastSep = false
+        }
+    }
+    return subStrs.map { codePoints ->
+        val a = codePoints.toIntArray()
+        String(a, 0, a.size)
+    }
 }
 
 /**
@@ -75,7 +145,7 @@ private fun partStr3(input: String,
     )
 }
 
-sealed class Partition {
+private sealed class Partition {
     class Parts(
             val before: String,
             val inner: String,

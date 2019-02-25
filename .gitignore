@@ -1,6 +1,8 @@
 weather-bot/.idea/
 weather-bot/data/
 .gradle
+*.jpg
+*.png
 **/out/
 **/build/
 **/.idea/
