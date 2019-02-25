@@ -24,6 +24,9 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import link.continuum.text2img.TextRenderer
+import link.continuum.text2img.loadImageBytes
+import link.continuum.text2img.unescapeUnicode
 import mu.KotlinLogging
 import okhttp3.HttpUrl
 import okhttp3.MediaType

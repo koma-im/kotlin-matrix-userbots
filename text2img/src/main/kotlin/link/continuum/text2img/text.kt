@@ -1,4 +1,5 @@
-package link.continuum.avecho
+package link.continuum.text2img
+
 
 import mu.KotlinLogging
 

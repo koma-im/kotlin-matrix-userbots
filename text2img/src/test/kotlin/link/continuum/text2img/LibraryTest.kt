@@ -1,12 +1,10 @@
-package link.continuum.avecho
+package link.continuum.text2img
 
-import org.junit.jupiter.api.Test
+import kotlin.test.Test
 import kotlin.test.assertEquals
 
-internal class TextKtTest {
-
-    @Test
-    fun unescapeUnicode() {
+class LibraryTest {
+    @Test fun testSomeLibraryMethod() {
         assertEquals("\\u{-1}", unescapeUnicode("\\u{-1}"))
         assertEquals("\\u{}", unescapeUnicode("\\u{}"))
         assertEquals("\\u{g}", unescapeUnicode("\\u{g}"))
@@ -16,6 +14,5 @@ internal class TextKtTest {
         assertEquals("❤", unescapeUnicode("\\u{2764}"))
         assertEquals("☺", unescapeUnicode("\\u{263a}"))
         assertEquals("☺❤", unescapeUnicode("\\u{263a}\\u{2764}"))
-
     }
 }

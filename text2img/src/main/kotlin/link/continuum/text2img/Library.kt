@@ -1,4 +1,4 @@
-package link.continuum.avecho
+package link.continuum.text2img
 
 import com.github.kittinunf.result.Result
 import mu.KotlinLogging
@@ -6,18 +6,10 @@ import java.awt.*
 import java.awt.image.BufferedImage
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
-import java.io.File
 import java.io.IOException
 import javax.imageio.ImageIO
 
-
-
 private val logger = KotlinLogging.logger {}
-
-fun loadImageFile(path: String): Image {
-    ImageIO.getCacheDirectory()
-    return ImageIO.read(File(path))
-}
 
 fun loadImageBytes(byteArray: ByteArray): Result<BufferedImage, IOException> {
     ImageIO.setUseCache(false)
@@ -112,8 +104,8 @@ class TextRenderer(
         val fm = g2d.fontMetrics
         val ascent = fm.ascent
         g2d.setRenderingHint(
-                        RenderingHints.KEY_TEXT_ANTIALIASING,
-                        RenderingHints.VALUE_TEXT_ANTIALIAS_GASP);
+                RenderingHints.KEY_TEXT_ANTIALIASING,
+                RenderingHints.VALUE_TEXT_ANTIALIAS_GASP);
         g2d.color = Color.BLACK
         for ((i, v) in lines.withIndex()) {
             val y = textWrapper.lineHeight * i + ascent + yOffset
