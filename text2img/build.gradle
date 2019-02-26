@@ -17,7 +17,7 @@ artifacts {
 }
 
 group = 'link.continuum'
-version = '0.0.1'
+version = '0.0.2'
 description = 'text2img'
 sourceCompatibility = '9'
 
@@ -40,7 +40,7 @@ dependencies {
     implementation 'io.github.microutils:kotlin-logging:1.6.22'
     implementation 'com.github.kittinunf.result:result:2.1.0'
     implementation 'org.slf4j:slf4j-api:1.8.0-beta2'
-    
+
     testImplementation 'org.jetbrains.kotlin:kotlin-test'
     testImplementation 'org.jetbrains.kotlin:kotlin-test-junit'
     testImplementation 'org.slf4j:slf4j-simple:1.8.0-beta2'
