@@ -2,6 +2,9 @@ package link.continuum.picsay
 
 import com.github.kittinunf.result.Result
 import com.github.kittinunf.result.map
+import link.continuum.text2img.HorizontalAlign
+import link.continuum.text2img.Point
+import link.continuum.text2img.VerticalAlign
 import link.continuum.text2img.drawPicSay
 import java.awt.Color
 import java.awt.Font
@@ -22,20 +25,25 @@ data class Template(
          */
         val width: Int,
         val fontSize: Int,
-        val fontName: String? = Font.SANS_SERIF,
-        val fontStyle: Int? = Font.PLAIN,
-        val color: List<Int>? = listOf(0, 0, 0)
-
+        val fontName: String = Font.SANS_SERIF,
+        val fontStyle: Int = Font.PLAIN,
+        val color: List<Int> = listOf(0, 0, 0),
+        val hAlign: HorizontalAlign = HorizontalAlign.LEFT,
+        val vAlign: VerticalAlign = VerticalAlign.TOP
 ) {
+    /**
+     * make default values work with moshi
+     */
+    @SuppressWarnings("unused")
+    private constructor(): this("", 1,2,3,4)
+
     fun render(input: String): Result<ByteArray, Exception> {
-        val color = color ?: listOf(0, 0, 0)
-        val fontStyle = fontStyle ?: Font.PLAIN
-        val fontName = Font.SANS_SERIF
         val c = Color(color[0], color[1], color[2])
         return Result.of(ImageIO.read(File(path)))
                 .map {
-                    drawPicSay(it, input, x, y, width,
+                    drawPicSay(it, input, Point(x, y), width,
                             Font(fontName, fontStyle,fontSize), color =  c)
                 }
     }
 }
+

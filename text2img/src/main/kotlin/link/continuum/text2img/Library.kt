@@ -21,20 +21,23 @@ private val logger = KotlinLogging.logger {}
 fun drawPicSay(
         background: BufferedImage,
         text: String,
-        xOffset: Int,
-        yOffset: Int,
+        offset: Point,
         widthLimit: Int,
         font: Font = Font(Font.SANS_SERIF, Font.PLAIN, 22),
-        color: Color = Color.BLACK
+        color: Color = Color.BLACK,
+        verticalAlign: VerticalAlign = VerticalAlign.TOP,
+        horizontalAlign: HorizontalAlign = HorizontalAlign.LEFT
 ): ByteArray {
-    // text may be positioned at negative coordinates
-    val xMin = Math.min(0, xOffset)
-    val yMin = Math.min(0, yOffset)
     val textWrapper = TextWrapper(font = font, widthLimit = widthLimit)
     val (lines, textWidth) = textWrapper.splitWrap(text)
     val textHeight = lines.size * textWrapper.lineHeight
-    val xMax = Math.max(background.width, xOffset + textWidth)
-    val yMax = Math.max(background.height, yOffset + textHeight)
+    // Coordinates use the top left corner of the image as origin
+    val rect = posRect(offset, textWidth, textHeight, verticalAlign, horizontalAlign)
+    // text may be positioned at negative coordinates
+    val xMin = Math.min(0, rect.topLeft.x)
+    val yMin = Math.min(0, rect.topLeft.y)
+    val xMax = Math.max(background.width, rect.bottomRight.x)
+    val yMax = Math.max(background.height, rect.bottomRight.y)
     val im = BufferedImage(xMax - xMin, yMax - yMin,
             BufferedImage.TYPE_INT_ARGB)
     val g2d = im.createGraphics()
@@ -47,7 +50,7 @@ fun drawPicSay(
     g2d.drawImage(background, 0 - xMin, 0-yMin,  null)
 
     g2d.font = font
-    drawTextLines(lines, g2d, xOffset = xOffset - xMin, yOffset = yOffset - yMin, color = color)
+    drawTextLines(lines, g2d, xOffset = rect.topLeft.x - xMin, yOffset = rect.topLeft.y - yMin, color = color)
 
     g2d.dispose()
     val out = ByteArrayOutputStream()
