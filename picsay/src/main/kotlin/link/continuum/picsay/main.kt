@@ -198,7 +198,7 @@ class Processor(
         val body = event.content?.body ?: return
         val (pre, txt) = partitionString(body, listOf(':', ' '))?:return
         if (pre == nick) {
-            commands(pre, RoomId(roomId))
+            commands(txt, RoomId(roomId))
         } else {
             val template = templates.get(pre)
             template ?: return
