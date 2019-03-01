@@ -22,10 +22,26 @@ class LibraryTest {
     }
 
     @Ignore @Test fun testRun() {
-            val bg = ImageIO.read(File("b.jpg"))
-            val im = drawPicSay(bg, "hello", 1024, 768, 600,
-                    Font(Font.SANS_SERIF, Font.ITALIC,64), color =  Color.RED)
-            File("o.png").writeBytes(im)
+            val bg = ImageIO.read(File("cow.jpg"))
+            val im = drawPicSay(bg, "hello ".repeat(10), Point(117, 75), 140,
+                    Font(Font.SERIF, Font.ITALIC,16), color =  Color.RED,
+                    horizontalAlign = HorizontalAlign.CENTER,
+                    verticalAlign = VerticalAlign.CENTER,
+                    format = Format.JPG
+                    )
+            File("cowsay.jpg").writeBytes(im)
+
+    }
+
+    @Ignore @Test fun testRun2() {
+        val bg = ImageIO.read(File("wolf.jpg"))
+        val im = drawPicSay(bg, "hello ".repeat(20), Point(232, 87), 400,
+                Font(Font.SERIF, Font.ITALIC,21), color =  Color.BLACK,
+                horizontalAlign = HorizontalAlign.CENTER,
+                verticalAlign = VerticalAlign.TOP,
+                format = Format.JPG
+        )
+        File("wolfsay.jpg").writeBytes(im)
 
     }
 }

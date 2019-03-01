@@ -26,7 +26,8 @@ fun drawPicSay(
         font: Font = Font(Font.SANS_SERIF, Font.PLAIN, 22),
         color: Color = Color.BLACK,
         verticalAlign: VerticalAlign = VerticalAlign.TOP,
-        horizontalAlign: HorizontalAlign = HorizontalAlign.LEFT
+        horizontalAlign: HorizontalAlign = HorizontalAlign.LEFT,
+        format: Format = Format.PNG
 ): ByteArray {
     val textWrapper = TextWrapper(font = font, widthLimit = widthLimit)
     val (lines, textWidth) = textWrapper.splitWrap(text)
@@ -38,8 +39,11 @@ fun drawPicSay(
     val yMin = Math.min(0, rect.topLeft.y)
     val xMax = Math.max(background.width, rect.bottomRight.x)
     val yMax = Math.max(background.height, rect.bottomRight.y)
-    val im = BufferedImage(xMax - xMin, yMax - yMin,
-            BufferedImage.TYPE_INT_ARGB)
+    val t = when (format) {
+        Format.PNG -> BufferedImage.TYPE_INT_ARGB
+        Format.JPG -> BufferedImage.TYPE_INT_RGB
+    }
+    val im = BufferedImage(xMax - xMin, yMax - yMin, t)
     val g2d = im.createGraphics()
     g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
     g2d.setRenderingHint(
@@ -54,7 +58,7 @@ fun drawPicSay(
 
     g2d.dispose()
     val out = ByteArrayOutputStream()
-    ImageIO.write(im, "png", out)
+    ImageIO.write(im, format.toString(), out)
     return out.toByteArray()
 }
 
