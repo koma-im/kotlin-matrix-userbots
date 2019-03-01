@@ -2,6 +2,8 @@ package link.continuum.picsay
 
 import com.github.kittinunf.result.Result
 import com.github.kittinunf.result.failure
+import com.github.kittinunf.result.flatMap
+import com.github.kittinunf.result.mapError
 import com.xenomachina.argparser.ArgParser
 import com.xenomachina.argparser.default
 import com.xenomachina.argparser.mainBody
@@ -24,7 +26,6 @@ import link.continuum.picsay.util.loadSyncBatchToken
 import link.continuum.picsay.util.parseProxy
 import link.continuum.picsay.util.partitionString
 import link.continuum.picsay.util.saveSyncBatchToken
-import link.continuum.text2img.TextRenderer
 import link.continuum.text2img.unescapeUnicode
 import mu.KotlinLogging
 import okhttp3.HttpUrl
@@ -86,19 +87,23 @@ fun run(
         ipv4: Boolean = false,
         args: MyArgs
 ) {
-    val templates = loadTemplates(args.config)
-    if (templates is Result.Failure) {
+    val t = loadTemplates(args.config).mapError {
         logger.error { "Load templates error" }
-        templates.error.printStackTrace()
-        return
-    }
-    if (templates.get().isEmpty()) {
-        logger.error { "Need at least one template, see " +
-                "https://github.com/koma-im/kotlin-matrix-userbots/tree/master/avecho " +
-                "for an example. "
+        it.printStackTrace()
+        it
+    }.flatMap { templates ->
+        if (templates.isEmpty()) {
+            logger.error { "Need at least one template, see " +
+                    "https://github.com/koma-im/kotlin-matrix-userbots/tree/master/picsay " +
+                    "for an example. "
+            }
+            Result.error(Exception("missing template"))
+        } else {
+            Result.of(templates)
         }
-        return
     }
+    if (t is Result.Failure) return
+
     val userId = UserId(user)
     val k = Koma(
             ConfigPaths("."),
@@ -127,11 +132,20 @@ fun run(
             nb?.let { saveSyncBatchToken(nb) }
         }
     })
-    val p = Processor(k, api, templates.get(), "picsay")
-    val j = GlobalScope.launch { processEvent(sync, p) }
-    sync.startSyncing()
-    logger.info { "Syncing started" }
-    runBlocking { j.join() }
+    runBlocking {
+        logger.info { "getting nick name of $user" }
+        api.getDisplayName(user)
+    }.fold({
+        val p = Processor(k, api, t.get(), it.displayname)
+        val j = GlobalScope.launch { processEvent(sync, p) }
+        sync.startSyncing()
+        logger.info { "Syncing started" }
+        runBlocking { j.join() }
+    }, {
+        logger.error { "couldn't get nick name of $user" }
+        it.printStackTrace()
+    })
+
 }
 
 
@@ -177,7 +191,7 @@ class Processor(
     init {
         require(templates.isNotEmpty(), { "need at least one template set up" } )
     }
-    private val renderer = TextRenderer()
+
     suspend fun processEvent(
             roomId: String,
             event: MRoomMessage) {
