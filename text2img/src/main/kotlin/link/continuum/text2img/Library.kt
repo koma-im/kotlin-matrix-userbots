@@ -27,7 +27,11 @@ fun drawPicSay(
         color: Color = Color.BLACK,
         verticalAlign: VerticalAlign = VerticalAlign.TOP,
         horizontalAlign: HorizontalAlign = HorizontalAlign.LEFT,
-        format: Format = Format.PNG
+        format: Format = Format.PNG,
+        /**
+         * fill background with color when it's not transparent
+         */
+        backgroundColor: Color = Color.WHITE
 ): ByteArray {
     val textWrapper = TextWrapper(font = font, widthLimit = widthLimit)
     val (lines, textWidth) = textWrapper.splitWrap(text)
@@ -39,12 +43,16 @@ fun drawPicSay(
     val yMin = Math.min(0, rect.topLeft.y)
     val xMax = Math.max(background.width, rect.bottomRight.x)
     val yMax = Math.max(background.height, rect.bottomRight.y)
-    val t = when (format) {
-        Format.PNG -> BufferedImage.TYPE_INT_ARGB
-        Format.JPG -> BufferedImage.TYPE_INT_RGB
+    val transparent = when (format) {
+        Format.PNG -> true
+        else -> false
     }
-    val im = BufferedImage(xMax - xMin, yMax - yMin, t)
+    val t = if (transparent) BufferedImage.TYPE_INT_ARGB else BufferedImage.TYPE_INT_RGB
+    val w = xMax - xMin
+    val h = yMax - yMin
+    val im = BufferedImage(w, h, t)
     val g2d = im.createGraphics()
+    if (!transparent) g2d.fillRect(0, 0, w, h)
     g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
     g2d.setRenderingHint(
             RenderingHints.KEY_TEXT_ANTIALIASING,

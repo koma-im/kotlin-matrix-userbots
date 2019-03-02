@@ -44,4 +44,17 @@ class LibraryTest {
         File("wolfsay.jpg").writeBytes(im)
 
     }
+
+    @Ignore @Test fun testRun3() {
+        val bg = ImageIO.read(File("fig.jpg"))
+        val im = drawPicSay(bg, "hello ".repeat(20), Point(124, 248), 248,
+                Font(Font.SERIF, Font.ITALIC,16), color =  Color.RED,
+                horizontalAlign = HorizontalAlign.CENTER,
+                verticalAlign = VerticalAlign.TOP,
+                backgroundColor = Color.GREEN,
+                format = Format.JPG
+        )
+        File("figsay.jpg").writeBytes(im)
+
+    }
 }

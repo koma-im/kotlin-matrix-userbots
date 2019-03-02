@@ -27,7 +27,8 @@ data class Template(
         val color: List<Int> = listOf(0, 0, 0),
         val hAlign: HorizontalAlign = HorizontalAlign.LEFT,
         val vAlign: VerticalAlign = VerticalAlign.TOP,
-        val format: Format = Format.JPG
+        val format: Format = Format.JPG,
+        val textBackground: List<Int>? = null
 ) {
     /**
      * make default values work with moshi
@@ -37,6 +38,7 @@ data class Template(
 
     fun render(input: String): Result<ByteArray, Exception> {
         val c = Color(color[0], color[1], color[2])
+        val textColor = textBackground?.let { Color(it[0], it[1], it[2]) }
         return Result.of(ImageIO.read(File(path)))
                 .map {
                     drawPicSay(it, input, Point(x, y), width,

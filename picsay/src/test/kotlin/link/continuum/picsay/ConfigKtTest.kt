@@ -10,7 +10,7 @@ import kotlin.test.Test
 class ConfigKtTest {
     @Ignore @Test fun testRun() {
         loadTemplates("config.json").flatMap {
-            val text = "test ".repeat(12)
+            val text = "test ".repeat(5)
             for ((label, template) in it) {
                 println("rendering template $label $template")
                 template.render(text).fold({
