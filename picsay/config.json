@@ -1,0 +1,26 @@
+{
+	"templates": {
+	       "cowsay":	{
+			"path": "cow.jpg",
+			"x": 117,
+			"y": 75,
+			"width": 140,
+			"fontSize": 16,
+			"fontStyle": 2,
+			"color": [255,0,0],
+			"hAlign": "CENTER",
+			"vAlign": "CENTER",
+			"format": "JPG"
+		},
+		"wolfsay": {
+			"path": "wolf.jpg",
+                        "x": 232,
+                        "y": 87,
+                        "width": 400,
+                        "fontSize": 21,
+			"fontStyle": 3,
+			"color": [0,0,0],
+			"hAlign": "CENTER"
+		}
+	}
+}

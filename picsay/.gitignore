@@ -4,7 +4,6 @@ out
 data
 *.png
 *.jpg
-*.json
 *.iml
 .idea
 *.crt
